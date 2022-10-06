@@ -15,7 +15,7 @@ SDD_PATH='/root/download/stanford_drone_dataset'
 OUT_PATH='/root/download/stanford_drone_dataset_coco'
 # SCENES=['bookstore','coupa','deathCircle','gates','hyang','little','nexus','quad']
 SCENES=['bookstore']
-# OUT_PATH/annotations/{scene}/train|val|test.json
+# OUT_PATH/annotations/{scene}/{#vid}/train|val|test.json
 SPLITS = ['train', 'val', 'test']
 HALF_VIDEO = True
 CREATE_SPLITTED_ANN = True
@@ -74,30 +74,28 @@ def generate_coco_annotation(src,des):
     @param des - The output path of the coco data, frame is in place
     """
     for scene in SCENES:
-        for split in SPLITS:
-            des_dir = f"{des}/videos/{scene}/annotations/"
-            if not os.path.exists(des_dir):
-                os.makedirs(des_dir)
-            out_path = f"{des_dir}/{split}.json"
-            out = {'images':[],
-                   'annotations':[],
-                   'categories':[{'id':1,'name':CATEGORIES[0]},
-                                 {'id':2,'name':CATEGORIES[1]},
-                                 {'id':3,'name':CATEGORIES[2]},
-                                 {'id':4,'name':CATEGORIES[3]},
-                                 {'id':5,'name':CATEGORIES[4]},
-                                 {'id':6,'name':CATEGORIES[5]}],
-                   'videos':[]}
-            ann_cnt = 0
-            video_cnt = 0
-            image_id_base = 0
-            # for each video
-            for vid in sorted(os.listdir(f"{OUT_PATH}/videos/{scene}/")):
-                # skip annotations folder
-                if vid == "annotations":
-                    continue
+        video_cnt = 0
+        for vid in sorted(os.listdir(f"{OUT_PATH}/videos/{scene}/")):
+            # skip annotations folder
+            if vid == "annotations":
+                continue
+            video_cnt += 1
+            for split in SPLITS:
+                des_dir = f"{des}/videos/{scene}/{vid}/annotations/"
+                if not os.path.exists(des_dir):
+                    os.makedirs(des_dir)
+                out_path = f"{des_dir}/{split}.json"
+                out = {'images':[],
+                       'annotations':[],
+                       'categories':[{'id':1,'name':CATEGORIES[0]},
+                                     {'id':2,'name':CATEGORIES[1]},
+                                     {'id':3,'name':CATEGORIES[2]},
+                                     {'id':4,'name':CATEGORIES[3]},
+                                     {'id':5,'name':CATEGORIES[4]},
+                                     {'id':6,'name':CATEGORIES[5]}],
+                       'videos':[]}
+                ann_cnt = 0
                 # 1 - create image description
-                video_cnt += 1
                 out['videos'].append({
                     'id': video_cnt,
                     'file_name': vid})
@@ -106,33 +104,32 @@ def generate_coco_annotation(src,des):
                 num_images = len([image for image in images if 'jpg' in image])
                 image_range = [0, num_images - 1]
                 for i in range(num_images):
-                    image_info = {'file_name': f'{vid}/frame{i}.jpg',
-                                  'id': image_id_base + i,
+                    image_info = {'file_name': f'frame{i}.jpg',
+                                  'id': i,
                                   'frame_id': i,
-                                  'prev_image_id': image_id_base+i-1,
-                                  'next_image_id': image_id_base+i+1,
+                                  'prev_image_id': i-1,
+                                  'next_image_id': i+1,
                                   'video_id': video_cnt}
                     out['images'].append(image_info)
                 # test will skip the annotations
                 if split != 'test':
                     # 2 - create the annotations
-                    # 2.1 load SDD annotation.
+                    # 2.1 load SDD annotations.
                     sdd_anns = load_sdd_annotation(f"{src}/annotations/{scene}/{vid}/annotations.txt")
                     ann_cnt = 1
+                    # 2.2 transform SDD annotations.
                     for sdd_ann in sdd_anns:
                         if sdd_ann[6]==1:
                             continue
                         ann = {'id': ann_cnt,
                                'category_id': sdd_ann[9],
-                               'image_id': image_id_base + sdd_ann[5],
+                               'image_id': sdd_ann[5],
                                'track_id': sdd_ann[0],
                                'bbox': [sdd_ann[1],sdd_ann[2],sdd_ann[3]-sdd_ann[1], sdd_ann[4]-sdd_ann[2]],
                                'conf': 1.0} # what is conf?
                         out['annotations'].append(ann)
-                # update the image_id_base
-                image_id_base += num_images
-
-            json.dump(out,open(out_path, 'w'))
+                # 3 - write output 
+                json.dump(out,open(out_path, 'w'))
 
 if __name__=='__main__':
     # This has been done.
