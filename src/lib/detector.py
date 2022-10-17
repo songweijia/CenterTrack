@@ -446,10 +446,11 @@ class Detector(object):
         del debugger.imgs['generic'], debugger.imgs['bird_pred']
     if 'ddd_pred' in debugger.imgs:
       debugger.imgs['generic'] = debugger.imgs['ddd_pred']
-    if self.opt.debug == 4:
-      debugger.save_all_imgs(self.opt.debug_dir, prefix='{}'.format(self.cnt))
-    else:
-      debugger.show_all_imgs(pause=self.pause)
+#    if self.opt.debug == 4:
+#      debugger.save_all_imgs(self.opt.debug_dir, prefix='{}'.format(self.cnt))
+#    else:
+#      debugger.show_all_imgs(pause=self.pause)
+    debugger.save_all_imgs(self.opt.debug_dir, prefix='{}'.format(self.cnt))
   
 
   def reset_tracking(self):

@@ -6,6 +6,7 @@ import _init_paths
 import os
 
 import torch
+torch.cuda.empty_cache()
 import torch.utils.data
 from opts import opts
 from model.model import create_model, load_model, save_model

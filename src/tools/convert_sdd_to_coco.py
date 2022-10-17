@@ -10,16 +10,19 @@ import numpy as np
 # sdd data
 # SDD_PATH/videos/${scene}/videoX/video.mov
 SDD_PATH='/root/download/stanford_drone_dataset'
+# SDD_PATH='/root/download/sdd_sample'
 # dest data
 # OUT_PATH/videos/${scene}/videoX/framesX.jpg
 OUT_PATH='/root/download/stanford_drone_dataset_coco'
+# OUT_PATH='/root/download/sdd_sample_coco'
 # SCENES=['bookstore','coupa','deathCircle','gates','hyang','little','nexus','quad']
 SCENES=['bookstore']
 # OUT_PATH/annotations/{scene}/{#vid}/train|val|test.json
 SPLITS = ['train', 'val', 'test']
 HALF_VIDEO = True
 CREATE_SPLITTED_ANN = True
-CATEGORIES = ['Biker','Bus','Car','Cart','Pedestrian','Skater']
+# CATEGORIES = ['Biker','Bus','Car','Cart','Pedestrian','Skater']
+CATEGORIES = ['Pedestrian']
 
 def video_to_frames(src,des):
     """
@@ -37,7 +40,11 @@ def video_to_frames(src,des):
             success,image = vidcap.read()
             count = 0
             while success:
-                cv2.imwrite(f"{des_dir}/frame{count}.jpg",image)
+                shape = image.shape;
+                resized_img = np.zeros((1088,1440,3), np.uint8)
+                for c in range(3):
+                    resized_img[0:shape[0],0:shape[1],c] = image[:,:,c]
+                cv2.imwrite(f"{des_dir}/frame{count}.jpg",resized_img)
                 success,image = vidcap.read()
                 count += 1
 
@@ -60,6 +67,9 @@ def load_sdd_annotation(sdd_ann_file):
         line = f.readline()
         ann = []
         while line:
+            if CATEGORIES[0] not in line:
+                line = f.readline()
+                continue
             for i in range(len(CATEGORIES)):
                 line = line.replace(f"\"{CATEGORIES[i]}\"",str(i+1))
             line = line.replace(" ",",")
@@ -87,12 +97,13 @@ def generate_coco_annotation(src,des):
                 out_path = f"{des_dir}/{split}.json"
                 out = {'images':[],
                        'annotations':[],
-                       'categories':[{'id':1,'name':CATEGORIES[0]},
-                                     {'id':2,'name':CATEGORIES[1]},
-                                     {'id':3,'name':CATEGORIES[2]},
-                                     {'id':4,'name':CATEGORIES[3]},
-                                     {'id':5,'name':CATEGORIES[4]},
-                                     {'id':6,'name':CATEGORIES[5]}],
+                       'categories':[{'id':1,'name':CATEGORIES[0]}],
+                       #'categories':[{'id':1,'name':CATEGORIES[0]},
+                       #             {'id':2,'name':CATEGORIES[1]},
+                       #              {'id':3,'name':CATEGORIES[2]},
+                       #              {'id':4,'name':CATEGORIES[3]},
+                       #              {'id':5,'name':CATEGORIES[4]},
+                       #              {'id':6,'name':CATEGORIES[5]}],
                        'videos':[]}
                 ann_cnt = 0
                 # 1 - create image description
@@ -104,6 +115,7 @@ def generate_coco_annotation(src,des):
                 num_images = len([image for image in images if 'jpg' in image])
                 image_range = [0, num_images - 1]
                 for i in range(num_images):
+                # for i in range(200):
                     image_info = {'file_name': f'frame{i}.jpg',
                                   'id': i,
                                   'frame_id': i,

@@ -12,6 +12,7 @@ import copy
 import numpy as np
 from opts import opts
 from detector import Detector
+import time
 
 
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
@@ -47,7 +48,8 @@ def demo(opt):
   print('out_name', out_name)
   if opt.save_video:
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    fourcc = cv2.VideoWriter_fourcc(*'H264')
+    # fourcc = cv2.VideoWriter_fourcc(*'H264')
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     out = cv2.VideoWriter('../results/{}.mp4'.format(
       opt.exp_id + '_' + out_name),fourcc, opt.save_framerate, (
         opt.video_w, opt.video_h))
@@ -77,7 +79,7 @@ def demo(opt):
       if cnt < opt.skip_first:
         continue
       
-      cv2.imshow('input', img)
+      # cv2.imshow('input', img)
 
       # track or detect the image.
       ret = detector.run(img)
@@ -97,6 +99,8 @@ def demo(opt):
         out.write(ret['generic'])
         if not is_video:
           cv2.imwrite('../results/demo{}.jpg'.format(cnt), ret['generic'])
+          print(ret['results'])
+          time.sleep(1)
       
       # esc to quit and finish saving video
       if cv2.waitKey(1) == 27:
